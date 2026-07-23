@@ -37,12 +37,17 @@ public class BookingApiTests
     [Test]
     public void GetBookingById_ReturnsCorrectFields()
     {
-        var request = new RestRequest("/booking/1", Method.Get);
+        var listRequest = new RestRequest("/booking", Method.Get);
+        var listResponse = client.Execute(listRequest);
+        var ids = JArray.Parse(listResponse.Content!);
+        var firstId = ids[0]["bookingid"]!.ToString();
+
+        var request = new RestRequest($"/booking/{firstId}", Method.Get);
         request.AddHeader("Accept", "application/json");
         var response = client.Execute(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-            "GET /booking/1 should return 200 OK");
+            $"GET /booking/{firstId} should return 200 OK");
 
         var body = JObject.Parse(response.Content!);
         Assert.That(body["firstname"]?.ToString(), Is.Not.Null.And.Not.Empty,
