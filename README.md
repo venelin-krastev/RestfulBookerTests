@@ -24,8 +24,9 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 | `SchemaValidationTests.cs` | `/booking/{id}` | GET | 4 |
 | `FilterBookingTests.cs` | `/booking?firstname` | GET | 3 |
 | `ParameterizedAuthTests.cs` | `/auth`, `/booking` | POST, GET | 6 |
+| `PerformanceTests.cs` | `/booking`, `/auth` | GET, POST | 4 |
 
-**Total: 28 tests**
+**Total: 32 tests**
 
 ## Key Concepts Demonstrated
 
@@ -37,6 +38,8 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 - **Schema validation** — `JTokenType.Integer`, `JTokenType.Boolean` for type-level assertions
 - **Query parameter filtering** — `request.AddQueryParameter()` for `GET /booking?firstname=`
 - **Parameterized tests** — `[TestCase]` for data-driven scenarios — multiple credential combinations in one test method
+- **BaseApiTest** — abstract base class eliminating `RestClient` setup duplication across all test fixtures
+- **Response time assertions** — `Stopwatch` measuring actual HTTP response time against a 2000ms threshold
 - **Non-standard status codes** — POST returns 200 (not 201), DELETE returns 201 (not 204) — asserted on actual behaviour
 - **403 Forbidden** — PUT/PATCH/DELETE without auth token
 
