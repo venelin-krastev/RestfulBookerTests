@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using RestSharp;
 
@@ -13,9 +15,11 @@ public class PerformanceTests : BaseApiTest
     {
         var request = new RestRequest("/booking", Method.Get);
 
-        var response = Client.Execute(request);
+        var sw = Stopwatch.StartNew();
+        Client.Execute(request);
+        sw.Stop();
 
-        Assert.That(response.ResponseTime.TotalMilliseconds, Is.LessThan(MaxResponseTimeMs),
+        Assert.That(sw.ElapsedMilliseconds, Is.LessThan(MaxResponseTimeMs),
             $"GET /booking should respond within {MaxResponseTimeMs}ms");
     }
 
@@ -23,15 +27,17 @@ public class PerformanceTests : BaseApiTest
     public void GetSingleBooking_RespondsWithinTimeLimit()
     {
         var listRequest = new RestRequest("/booking", Method.Get);
-        var ids = Newtonsoft.Json.Linq.JArray.Parse(Client.Execute(listRequest).Content!);
+        var ids = JArray.Parse(Client.Execute(listRequest).Content!);
         var firstId = ids[0]["bookingid"]!.ToString();
 
         var request = new RestRequest($"/booking/{firstId}", Method.Get);
         request.AddHeader("Accept", "application/json");
 
-        var response = Client.Execute(request);
+        var sw = Stopwatch.StartNew();
+        Client.Execute(request);
+        sw.Stop();
 
-        Assert.That(response.ResponseTime.TotalMilliseconds, Is.LessThan(MaxResponseTimeMs),
+        Assert.That(sw.ElapsedMilliseconds, Is.LessThan(MaxResponseTimeMs),
             $"GET /booking/{{id}} should respond within {MaxResponseTimeMs}ms");
     }
 
@@ -42,9 +48,11 @@ public class PerformanceTests : BaseApiTest
         request.AddHeader("Content-Type", "application/json");
         request.AddJsonBody(new { username = "admin", password = "password123" });
 
-        var response = Client.Execute(request);
+        var sw = Stopwatch.StartNew();
+        Client.Execute(request);
+        sw.Stop();
 
-        Assert.That(response.ResponseTime.TotalMilliseconds, Is.LessThan(MaxResponseTimeMs),
+        Assert.That(sw.ElapsedMilliseconds, Is.LessThan(MaxResponseTimeMs),
             $"POST /auth should respond within {MaxResponseTimeMs}ms");
     }
 
@@ -64,9 +72,11 @@ public class PerformanceTests : BaseApiTest
             additionalneeds = "None"
         });
 
-        var response = Client.Execute(request);
+        var sw = Stopwatch.StartNew();
+        Client.Execute(request);
+        sw.Stop();
 
-        Assert.That(response.ResponseTime.TotalMilliseconds, Is.LessThan(MaxResponseTimeMs),
+        Assert.That(sw.ElapsedMilliseconds, Is.LessThan(MaxResponseTimeMs),
             $"POST /booking should respond within {MaxResponseTimeMs}ms");
     }
 }

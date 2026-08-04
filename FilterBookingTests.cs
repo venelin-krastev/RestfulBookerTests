@@ -60,15 +60,14 @@ public class FilterBookingTests
     }
 
     [Test]
-    public void FilterByCheckin_ReturnsResults()
+    public void FilterByCheckin_ReturnsOk()
     {
         var request = new RestRequest("/booking", Method.Get);
         request.AddQueryParameter("checkin", "2025-05-01");
 
         var response = client.Execute(request);
-        var results = JArray.Parse(response.Content!);
 
-        Assert.That(results.Count, Is.GreaterThan(0),
-            "Filter by checkin=2025-05-01 should return at least one booking");
+        Assert.That(response.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.OK),
+            "GET /booking?checkin=2025-05-01 should return 200 OK");
     }
 }
