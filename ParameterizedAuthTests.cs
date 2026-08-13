@@ -5,27 +5,17 @@ using RestSharp;
 namespace RestfulBookerTests;
 
 [TestFixture]
-public class ParameterizedAuthTests
+public class ParameterizedAuthTests : BaseApiTest
 {
-    private RestClient client;
-    private const string BaseUrl = "https://restful-booker.herokuapp.com";
-
-    [OneTimeSetUp]
-    public void OneTimeSetup() => client = new RestClient(BaseUrl);
-
-    [OneTimeTearDown]
-    public void OneTimeTeardown() => client.Dispose();
-
     [TestCase("wrong", "password123")]
     [TestCase("admin", "wrongpass")]
     [TestCase("", "")]
     public void InvalidCredentials_ReturnsBadCredentials(string username, string password)
     {
         var request = new RestRequest("/auth", Method.Post);
-        request.AddHeader("Content-Type", "application/json");
         request.AddJsonBody(new { username, password });
 
-        var response = client.Execute(request);
+        var response = Client.Execute(request);
         var body = JObject.Parse(response.Content!);
 
         Assert.That(body["reason"]?.ToString(), Is.EqualTo("Bad credentials"),
@@ -36,10 +26,9 @@ public class ParameterizedAuthTests
     public void ValidCredentials_ReturnsNonEmptyToken(string username, string password)
     {
         var request = new RestRequest("/auth", Method.Post);
-        request.AddHeader("Content-Type", "application/json");
         request.AddJsonBody(new { username, password });
 
-        var response = client.Execute(request);
+        var response = Client.Execute(request);
         var body = JObject.Parse(response.Content!);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
@@ -55,7 +44,7 @@ public class ParameterizedAuthTests
         var request = new RestRequest("/booking", Method.Get);
         request.AddQueryParameter(paramName, paramValue);
 
-        var response = client.Execute(request);
+        var response = Client.Execute(request);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
             $"GET /booking?{paramName}={paramValue} should return 200 OK");
