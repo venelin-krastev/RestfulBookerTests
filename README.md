@@ -43,6 +43,20 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 - **Non-standard status codes** — POST returns 200 (not 201), DELETE returns 201 (not 204) — asserted on actual behaviour
 - **403 Forbidden** — PUT/PATCH/DELETE without auth token
 
+## Non-Obvious Implementation Details
+
+**Why `RestClient` is in `[OneTimeSetUp]`**
+`RestClient` is thread-safe and reuses the underlying HTTP connection pool. Creating a new client per test would open and close a TCP connection for every request — wasteful and slower. One shared instance per test fixture eliminates that overhead.
+
+**Why the auth token is sent as a Cookie, not an Authorization header**
+Restful-Booker's API does not follow the standard `Authorization: Bearer {token}` convention. It expects `Cookie: token={value}` on PUT, PATCH, and DELETE requests. This is a known quirk of the practice API — tests assert on actual behaviour, not RFC convention.
+
+**Why `BaseApiTest` is `abstract`**
+Prevents direct instantiation of the base class. Every test fixture inherits `RestClient` setup and teardown from one place — adding a header, changing the base URL, or adjusting timeout requires a change in exactly one file.
+
+**Why a dynamic booking ID is created in `[OneTimeSetUp]`**
+The Restful-Booker API resets its data between CI runs and bookings may be deleted by other users. Hardcoding an ID would cause intermittent 404 failures. A fresh booking is created before the suite runs, its ID stored as a static property, and all tests that need a real booking ID reference it.
+
 ## Non-Standard API Behaviour
 
 | Scenario | Expected | Actual |
