@@ -21,5 +21,15 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
 
+      - name: Build
+        run: dotnet build --no-restore
+
       - name: Run tests
-        run: dotnet test --no-restore --logger "console;verbosity=normal"
+        run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: "**/*.trx"
