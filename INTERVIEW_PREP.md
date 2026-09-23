@@ -27,6 +27,17 @@ A: `AddHeader` sets an HTTP header (e.g. `Cookie: token=abc`, `Accept: applicati
 
 ---
 
+## 2026-09-23 — ITestLogger: interface vs a second abstract class
+
+**Q: BaseApiTest is already an abstract class. Why did you add logging through an interface instead of another base class?**
+A: A C# class can only inherit one class, and `BaseApiTest` already occupies that slot for every test fixture. An `interface` doesn't compete for that slot — a class can implement any number of interfaces alongside its one class inheritance. So `BaseApiTest : ITestLogger` is legal, while a second `abstract class` inheritance would not compile.
+
+**Q: Conceptually, why is logging an interface concern and not part of the abstract class itself?**
+A: `BaseApiTest` models what the fixture *is* — it owns state (`RestClient`) and lifecycle (`[OneTimeSetUp]`/`[OneTimeTeardown]`). Logging is a *capability*, not part of that identity — it doesn't need state of its own. Interfaces are the right tool for "can do X" behavior; abstract classes are the right tool for shared state and "is-a" hierarchy.
+
+**Q: Your `ITestLogger` methods have a body directly in the interface (`=>` default implementation). Why does `LogStart()` in `BaseApiTest` call `((ITestLogger)this).LogTestStart(...)` instead of just `LogTestStart(...)`?**
+A: Default interface methods (C# 8+) aren't automatically promoted into the implementing class's own member list. If the class doesn't override the method, it isn't callable unqualified through `this` — it has to be invoked through the interface type via an explicit cast. This is a known gotcha of default interface methods, and it's exactly why many teams prefer a plain composition-based logger (a static helper class called from `TearDown`) over relying on default interface implementations in production code.
+
 ## 2026-09-04 — GitHub Actions: if: always()
 
 **Q: Why does the artifact upload step have `if: always()`?**
