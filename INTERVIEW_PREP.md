@@ -38,6 +38,16 @@ A: `BaseApiTest` models what the fixture *is* — it owns state (`RestClient`) a
 **Q: Your `ITestLogger` methods have a body directly in the interface (`=>` default implementation). Why does `LogStart()` in `BaseApiTest` call `((ITestLogger)this).LogTestStart(...)` instead of just `LogTestStart(...)`?**
 A: Default interface methods (C# 8+) aren't automatically promoted into the implementing class's own member list. If the class doesn't override the method, it isn't callable unqualified through `this` — it has to be invoked through the interface type via an explicit cast. This is a known gotcha of default interface methods, and it's exactly why many teams prefer a plain composition-based logger (a static helper class called from `TearDown`) over relying on default interface implementations in production code.
 
+---
+
+## 2026-09-24 — CI: pull_request trigger and NuGet caching
+
+**Q: Your workflow triggers on both `push` and `pull_request` to `main`. Why not just `push`?**
+A: `push` only runs CI after code has already landed on `main`. `pull_request` runs CI on the branch itself, before merge — it's the gate that catches a broken change while it's still isolated, instead of finding out only after it's already merged and other branches may have built on top of it.
+
+**Q: You added `cache: true` to `actions/setup-dotnet`. What does it actually cache, and why did you point `cache-dependency-path` at `**/*.csproj` instead of the default `packages.lock.json`?**
+A: It caches the NuGet package directory so `dotnet restore` doesn't re-download every package on every run — the cache key is a hash of whatever files `cache-dependency-path` matches. The default lookup is `packages.lock.json`, but this project doesn't generate one (no `RestorePackagesWithLockFile` setting), so pointing at that pattern would match nothing and silently produce a cache that never gets a valid key. Using `**/*.csproj` instead means the cache invalidates whenever the project file's package references change — less precise than a real lock file, but correct for a project that doesn't use one.
+
 ## 2026-09-04 — GitHub Actions: if: always()
 
 **Q: Why does the artifact upload step have `if: always()`?**
