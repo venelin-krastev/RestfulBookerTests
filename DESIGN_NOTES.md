@@ -1,6 +1,6 @@
-# Interview Prep — RestfulBookerTests
+# Design Notes — RestfulBookerTests
 
-Real questions a senior QA interviewer would ask when reviewing this project.
+Decisions made in this project, why, and the trade-offs involved.
 
 ---
 
@@ -47,6 +47,18 @@ A: `push` only runs CI after code has already landed on `main`. `pull_request` r
 
 **Q: You added `cache: true` to `actions/setup-dotnet`. What does it actually cache, and why did you point `cache-dependency-path` at `**/*.csproj` instead of the default `packages.lock.json`?**
 A: It caches the NuGet package directory so `dotnet restore` doesn't re-download every package on every run — the cache key is a hash of whatever files `cache-dependency-path` matches. The default lookup is `packages.lock.json`, but this project doesn't generate one (no `RestorePackagesWithLockFile` setting), so pointing at that pattern would match nothing and silently produce a cache that never gets a valid key. Using `**/*.csproj` instead means the cache invalidates whenever the project file's package references change — less precise than a real lock file, but correct for a project that doesn't use one.
+
+## 2026-09-25 — Access modifiers in the BaseApiTest hierarchy, and the Infinity bug
+
+**Decision:** `Client` in `BaseApiTest` is `protected`, not `private`.
+**Why:** `private` would restrict access to `BaseApiTest` itself only — no derived class (`PerformanceTests`, `UpdateBookingTests_v2`, etc.) could reach it, breaking the entire point of a shared base class. `protected` extends access to the class and everything that inherits from it, which is exactly the shape this hierarchy needs.
+**Trade-off:** none really — this is the correct default for a base-class field meant to be used by subclasses, not a compromise.
+
+**Decision:** `bookingid` is extracted with a Regex from the raw response string instead of full JSON deserialization.
+**Why:** `restful-booker` occasionally serialises `bookingid` as the literal `Infinity` instead of a number, which isn't valid JSON — `JObject.Parse`/Newtonsoft throws trying to read it as a number token. Tests were failing intermittently with a deserialization exception rather than a normal assertion failure, which was the first clue the problem was in the data, not the test logic. Since the third-party API's bug can't be fixed from this side, extracting just the numeric ID via Regex (`"bookingid":(\d+)`) sidesteps the malformed field entirely.
+**Trade-off:** Regex extraction is more brittle to response format changes than proper deserialization — acceptable here because it targets one known, narrow quirk in a third-party API, not general-purpose parsing.
+
+---
 
 ## 2026-09-04 — GitHub Actions: if: always()
 
