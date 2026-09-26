@@ -65,6 +65,33 @@ public class UpdateBookingTests_v2 : BaseApiTest
     }
 
     [Test]
+    public void UpdateBooking_OmittingField_PreservesOldValueDespitePutSemantics()
+    {
+        var bookingId = CreateTestBooking();
+        var token = GetAuthToken();
+
+        var putRequest = new RestRequest($"/booking/{bookingId}", Method.Put);
+        putRequest.AddHeader("Accept", "application/json");
+        putRequest.AddHeader("Cookie", $"token={token}");
+        putRequest.AddJsonBody(new
+        {
+            firstname = "Updated",
+            lastname = "Full",
+            totalprice = 999,
+            depositpaid = false,
+            bookingdates = new { checkin = "2026-04-01", checkout = "2026-04-07" }
+            // additionalneeds intentionally omitted
+        });
+
+        var response = Client.Execute(putRequest);
+        var body = JObject.Parse(response.Content!);
+
+        Assert.That(body["additionalneeds"]?.ToString(), Is.EqualTo("None"),
+            "restful-booker's PUT keeps the old value for an omitted field instead of clearing it — " +
+            "not textbook full-replacement PUT semantics, verified against the live API before writing this test");
+    }
+
+    [Test]
     public void UpdateBooking_WithoutAuth_Returns403()
     {
         var bookingId = CreateTestBooking();

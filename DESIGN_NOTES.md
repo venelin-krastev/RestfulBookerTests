@@ -60,6 +60,14 @@ A: It caches the NuGet package directory so `dotnet restore` doesn't re-download
 
 ---
 
+## 2026-09-26 — restful-booker's PUT doesn't fully replace the resource
+
+**Decision:** Added `UpdateBooking_OmittingField_PreservesOldValueDespitePutSemantics`, which sends a PUT with `additionalneeds` deliberately left out and asserts the old value is still there afterward.
+**Why:** Textbook PUT semantics say the request body fully replaces the resource — an omitted field should be cleared, not preserved. Verified the real behavior against the live API with `curl` before writing any assertion: `restful-booker` keeps the old value for a field missing from the PUT body instead of clearing it. That's a genuine deviation from the HTTP spec's PUT semantics, in the same family as the `bookingid: Infinity` and non-standard status code quirks already documented for this API — another case of testing the real behavior instead of assuming the spec.
+**Trade-off:** none — this is a pure documentation/regression-guard test. If `restful-booker` ever changes this behavior (e.g., starts actually clearing omitted fields), this test fails loudly instead of the assumption silently going stale.
+
+---
+
 ## 2026-09-04 — GitHub Actions: if: always()
 
 **Q: Why does the artifact upload step have `if: always()`?**
