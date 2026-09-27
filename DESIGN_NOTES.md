@@ -68,6 +68,14 @@ A: It caches the NuGet package directory so `dotnet restore` doesn't re-download
 
 ---
 
+## 2026-09-27 — Fixed a 4-day-red CI: PUT on a non-existent booking also returns 405, not 404
+
+**Decision:** Renamed `UpdateBooking_WithNonExistentId_Returns404` to `UpdateBooking_WithNonExistentId_ReturnsNotFoundOrMethodNotAllowed` and changed the assertion from `Is.EqualTo(HttpStatusCode.NotFound)` to `Is.AnyOf(404, 405)`.
+**Why:** This test had been failing on every CI run since it was written (#26 through #29, 4 straight failures) — `restful-booker` consistently returns 405 Method Not Allowed for a PUT on a non-existent booking, never 404. This isn't flakiness, it's the API's actual, repeatable behavior. The exact same inconsistency was already known and handled for DELETE (`DeleteNonExistentBooking_ReturnsNotFoundOrMethodNotAllowed`, using `Is.AnyOf(404, 405)`) — this fix just applies the same established pattern to PUT instead of inventing a new one.
+**Trade-off:** `Is.AnyOf(404, 405)` is a looser assertion than a single expected status — it means the test wouldn't catch a regression from 405 to some other wrong code like 500. Accepted because the goal here is matching a third-party API's known-inconsistent behavior, not enforcing a strict contract this project doesn't control.
+
+---
+
 ## 2026-09-04 — GitHub Actions: if: always()
 
 **Q: Why does the artifact upload step have `if: always()`?**
