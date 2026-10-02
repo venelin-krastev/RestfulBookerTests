@@ -16,7 +16,10 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 | Class | Endpoint | Method | Tests |
 |---|---|---|---|
 | `BookingApiTests.cs` | `/booking`, `/booking/{id}` | GET | 3 |
+| `GetBookingListTests.cs` | `/booking` | GET | 1 |
+| `GetBookingNotFoundTests.cs` | `/booking/{id}` | GET | 1 |
 | `CreateBookingTests.cs` | `/booking` | POST | 2 |
+| `CreateBookingValidationTests.cs` | `/booking` | POST | 1 |
 | `AuthTokenTests.cs` | `/auth` | POST | 2 |
 | `DeleteBookingTests.cs` | `/booking/{id}` | DELETE | 2 |
 | `UpdateBookingTests.cs` | `/booking/{id}` | PUT | 3 |
@@ -25,8 +28,13 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 | `FilterBookingTests.cs` | `/booking?firstname` | GET | 3 |
 | `ParameterizedAuthTests.cs` | `/auth`, `/booking` | POST, GET | 6 |
 | `PerformanceTests.cs` | `/booking`, `/auth` | GET, POST | 4 |
+| `GetSingleBookingTests_v2.cs` | `/booking/{id}` | GET | 2 |
+| `GetBookingWithFiltersTests_v2.cs` | `/booking?firstname` | GET | 2 |
+| `DeleteBookingTests_v2.cs` | `/booking/{id}` | DELETE | 4 |
+| `PatchBookingTests_v2.cs` | `/booking/{id}` | PATCH | 1 |
+| `UpdateBookingTests_v2.cs` | `/booking/{id}` | PUT | 4 |
 
-**Total: 32 tests**
+**Total: 48 tests**
 
 ## Key Concepts Demonstrated
 
@@ -39,9 +47,12 @@ Automated API test suite for [Restful Booker](https://restful-booker.herokuapp.c
 - **Query parameter filtering** — `request.AddQueryParameter()` for `GET /booking?firstname=`
 - **Parameterized tests** — `[TestCase]` for data-driven scenarios — multiple credential combinations in one test method
 - **BaseApiTest** — abstract base class eliminating `RestClient` setup duplication across all test fixtures
+- **ITestLogger** — interface logging capability alongside class inheritance (C# single-inheritance workaround)
+- **Default interface methods** — `((ITestLogger)this).LogTestStart()` explicit cast required; methods aren't promoted to the class's own member list
 - **Response time assertions** — `Stopwatch` measuring actual HTTP response time against a 2000ms threshold
 - **Non-standard status codes** — POST returns 200 (not 201), DELETE returns 201 (not 204) — asserted on actual behaviour
 - **403 Forbidden** — PUT/PATCH/DELETE without auth token
+- **Regex ID extraction** — `bookingid` extracted via Regex to bypass restful-booker's occasional `Infinity` serialisation bug
 
 ## Non-Obvious Implementation Details
 
@@ -63,6 +74,9 @@ The Restful-Booker API resets its data between CI runs and bookings may be delet
 |---|---|---|
 | POST /booking — create booking | 201 Created | 200 OK |
 | DELETE /booking/{id} — delete booking | 204 No Content | 201 Created |
+| PUT /booking/{non-existent-id} | 404 Not Found | 405 Method Not Allowed |
+| PUT /booking/{id} with omitted field | field cleared (full replace) | old value preserved |
+| GET /booking — bookingid field | integer | occasionally `Infinity` (invalid JSON) |
 
 Tests assert on actual behaviour, not RFC convention.
 
